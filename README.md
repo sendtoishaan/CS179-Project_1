@@ -5,4 +5,11 @@ Description: Given a set of locations to visit, find the optimal set or list of 
 
 Programming Language: Python
 
-Libraries/External Tools Used: 
+Comes with 5(.txt) test case files.
+
+Libraries/External Tools Used:
+
+1. numpy
+2. random
+3. sys
+4. threading
