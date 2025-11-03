@@ -1,4 +1,4 @@
-#Functions taken from RANDOM_SEARCH.py
+# Functions taken from RANDOM_SEARCH.py
 import numpy as np
 import random
 from RANDOM_SEARCH import (
