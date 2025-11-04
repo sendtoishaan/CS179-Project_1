@@ -36,7 +36,7 @@ def NEAREST_NEIGHBOR_SEARCH(DISTANCE_MATRIX):
 
 '''
 Nearest Neighbor approach but swap random locations to see if there is a more optimal solution
-    We got the concept from https://en.wikipedia.org/wiki/2-opt, but we created the code on our own
+    We got the concept from https://slowandsteadybrain.medium.com/traveling-salesman-problem-ce78187cf1f3, but we created the code on our own
 '''
 def TWO_OPT_SEARCH(PATH, DISTANCE_MATRIX, MAX_ITERATIONS):
     IMPROVED_PATH = PATH[:]
