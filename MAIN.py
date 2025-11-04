@@ -37,6 +37,11 @@ def main():
     try:
         GET_LOCATIONS = GET_STATION_LOCATIONS(FILE_NAME)
         NUMBER_OF_LOCATIONS = len(GET_LOCATIONS)
+        
+        if NUMBER_OF_LOCATIONS < 0 or NUMBER_OF_LOCATIONS > 256:
+            print("Number of stations is out of range(0 - 256).")
+            sys.exit(1)
+        
         print(f"\nThere are {NUMBER_OF_LOCATIONS} nodes, computing route...")
         
         DISTANCE_MATRIX = CREATE_DISTANCE_MATRIX(GET_LOCATIONS)
@@ -47,7 +52,7 @@ def main():
         BSF_PATH = INITIAL_PATH
         BSF_DISTANCE = INITIAL_DISTANCE
 
-        print("\nShortest Route Discovered So Far:")
+        print("\nShortest Route Discovered So Far(PRESS ENTER TO STOP):")
         
         STOP_FLAG = False
         USER_ENTER = threading.Thread(target=wait_for_enter, daemon=True)
@@ -73,7 +78,7 @@ def main():
         
     except FileNotFoundError as e:
         print(f"\n{e}")
-        print("Program aborted.")
+        print("Incorrect File Name or Type. Program aborted.")
         sys.exit(1)
     except ValueError as e:
         print(f"\n{e}")
