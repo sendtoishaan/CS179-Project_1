@@ -1,16 +1,21 @@
 import numpy as np
 import random
+import sys
+
 from RANDOM_SEARCH import (
    GET_STATION_LOCATIONS,
    CREATE_DISTANCE_MATRIX,
    CALCULATE_PATH_DISTANCE,
 )
+
 from NEAREST_NEIGHBOR_SEARCH import (
    NEAREST_NEIGHBOR_SEARCH,
    TWO_OPT_SEARCH,
 )
 
+from MULTI_DRONE_SOLUTION_TRACE import GENERATE_SOLUTION_TRACE
 
+# 
 def KMEANS_SINGLE_RUN(STATION_LOCATIONS, NUM_OF_CLUSTERS, MAX_ITERATIONS):
    NUM_LOCATIONS = len(STATION_LOCATIONS)
    RANDOM_INDEX_LIST = random.sample(range(NUM_LOCATIONS), NUM_OF_CLUSTERS)
@@ -27,14 +32,16 @@ def KMEANS_SINGLE_RUN(STATION_LOCATIONS, NUM_OF_CLUSTERS, MAX_ITERATIONS):
            for CLUSTER_INDEX in range(NUM_OF_CLUSTERS):
                X = STATION_LOCATIONS[LOCATION_INDEX][0] - CLUSTER_LANDING_PAD[CLUSTER_INDEX][0]
                Y = STATION_LOCATIONS[LOCATION_INDEX][1] - CLUSTER_LANDING_PAD[CLUSTER_INDEX][1]
-               DISTANCE = X*X + Y*Y
+               DISTANCE = (X * X) + (Y * Y)
                DISTANCES[LOCATION_INDEX][CLUSTER_INDEX] = DISTANCE
 
 
        CLUSTER_IDS = []
+       
        for LOCATION_INDEX in range(NUM_LOCATIONS):
            MIN_DISTANCE = float('inf')
            BEST_CLUSTER = 0
+           
            for CLUSTER_INDEX in range(NUM_OF_CLUSTERS):
                if DISTANCES[LOCATION_INDEX][CLUSTER_INDEX] < MIN_DISTANCE:
                    MIN_DISTANCE = DISTANCES[LOCATION_INDEX][CLUSTER_INDEX]
@@ -59,6 +66,7 @@ def KMEANS_SINGLE_RUN(STATION_LOCATIONS, NUM_OF_CLUSTERS, MAX_ITERATIONS):
                NEW_CLUSTER_LANDING_PAD[CLUSTER_INDEX][1] /= CLUSTER_COUNT[CLUSTER_INDEX]
       
        CONVERGED = True
+       
        for CLUSTER_INDEX in range(NUM_OF_CLUSTERS):
            X = abs(CLUSTER_LANDING_PAD[CLUSTER_INDEX][0] - NEW_CLUSTER_LANDING_PAD[CLUSTER_INDEX][0])
            Y = abs(CLUSTER_LANDING_PAD[CLUSTER_INDEX][1] - NEW_CLUSTER_LANDING_PAD[CLUSTER_INDEX][1])
@@ -73,6 +81,7 @@ def KMEANS_SINGLE_RUN(STATION_LOCATIONS, NUM_OF_CLUSTERS, MAX_ITERATIONS):
        CLUSTER_LANDING_PAD = NEW_CLUSTER_LANDING_PAD
   
    SUM_OF_DISTANCE = 0.0
+   
    for LOCATION_INDEX in range(NUM_OF_CLUSTERS):
        CLUSTER_INDEX = CLUSTER_IDS[LOCATION_INDEX]
        NEW_CLUSTER_LANDING_PAD[CLUSTER_INDEX][0] += STATION_LOCATIONS[LOCATION_INDEX][0]
@@ -89,6 +98,7 @@ def KMEANS_SINGLE_RUN(STATION_LOCATIONS, NUM_OF_CLUSTERS, MAX_ITERATIONS):
            NEW_CLUSTER_LANDING_PAD[CLUSTER_INDEX][1] /= CLUSTER_COUNT[CLUSTER_INDEX]
       
        CONVERGED = True
+       
        for CLUSTER_INDEX in range(NUM_OF_CLUSTERS):
            X = abs(CLUSTER_LANDING_PAD[CLUSTER_INDEX][0] - NEW_CLUSTER_LANDING_PAD[CLUSTER_INDEX][0])
            Y = abs(CLUSTER_LANDING_PAD[CLUSTER_INDEX][1] - NEW_CLUSTER_LANDING_PAD[CLUSTER_INDEX][1])
@@ -103,20 +113,18 @@ def KMEANS_SINGLE_RUN(STATION_LOCATIONS, NUM_OF_CLUSTERS, MAX_ITERATIONS):
        CLUSTER_LANDING_PAD = NEW_CLUSTER_LANDING_PAD
   
    SUM_OF_DISTANCE = 0.0
+   
    for LOCATION_INDEX in range(NUM_LOCATIONS):
        CLUSTER_INDEX = CLUSTER_IDS[LOCATION_INDEX]
        X = STATION_LOCATIONS[LOCATION_INDEX][0] - CLUSTER_LANDING_PAD[CLUSTER_INDEX][0]
        Y = STATION_LOCATIONS[LOCATION_INDEX][1] - CLUSTER_LANDING_PAD[CLUSTER_INDEX][1]
-       SUM_OF_DISTANCE += X*X + Y*Y
+       SUM_OF_DISTANCE += (X * X) + (Y * Y)
   
    return CLUSTER_IDS, CLUSTER_LANDING_PAD, SUM_OF_DISTANCE
 
-
-
-
+# 
 def KMEANS_CLUSTERING(STATION_LOCATIONS, NUM_OF_CLUSTERS, MAX_ITERATIONS):
    RESULTS = {}
-
 
    for K in range(1, 5):
        BEST_SUM_OF_DISTANCE = float('inf')
@@ -137,7 +145,7 @@ def KMEANS_CLUSTERING(STATION_LOCATIONS, NUM_OF_CLUSTERS, MAX_ITERATIONS):
    return RESULTS
 
 
-
+# 
 def CLUSTER_TSP_SOLVER(CLUSTER_LOCATIONS, LANDING_PAD, MAX_ITERATIONS):
     NUM_OF_LOCATIONS = [LANDING_PAD] + CLUSTER_LOCATIONS
     DISTANCE_MATRIX = CREATE_DISTANCE_MATRIX(NUM_OF_LOCATIONS)
@@ -149,8 +157,7 @@ def CLUSTER_TSP_SOLVER(CLUSTER_LOCATIONS, LANDING_PAD, MAX_ITERATIONS):
     
     return OPTIMIZED_PATH, ROUTE_DISTANCE
 
-
-
+# 
 def SOLVE_MULTI_DRONE_PROBLEM(STATION_LOCATIONS, K, MAX_ITERATIONS, RESULTS):
     NUM_OF_LOCATIONS = len(STATION_LOCATIONS)
     ROUTES = []
@@ -165,6 +172,7 @@ def SOLVE_MULTI_DRONE_PROBLEM(STATION_LOCATIONS, K, MAX_ITERATIONS, RESULTS):
                 CLUSTER_INDEX.append(LOCATION_INDEX)
 
         CLUSTER_LOCATIONS = []
+        
         for LOCATION_INDEX in CLUSTER_INDEX:
             CLUSTER_LOCATIONS.append(STATION_LOCATIONS[LOCATION_INDEX])
 
@@ -186,15 +194,14 @@ def SOLVE_MULTI_DRONE_PROBLEM(STATION_LOCATIONS, K, MAX_ITERATIONS, RESULTS):
     
     return SOLUTION
 
-
-
+# 
 def OPTIMIZE_MULTI_DRONE_ROUTES(FILE_NAME, MAX_ITERATIONS=100, NUM_RESTARTS=10):
     from RANDOM_SEARCH import GET_STATION_LOCATIONS
     print("ComputePossibleSolutions")
     STATION_LOCATIONS = GET_STATION_LOCATIONS(FILE_NAME)
     NUM_OF_LOCATIONS = len(STATION_LOCATIONS)
     
-    print(f"Enter the name of file: {FILE_NAME}")
+    print(f"File: {FILE_NAME}")
     print(f"There are {NUM_OF_LOCATIONS} nodes: Solutions will be available by 7:04am") # time change
     
     KMEANS_RESULTS = KMEANS_CLUSTERING(STATION_LOCATIONS, NUM_RESTARTS, MAX_ITERATIONS)
@@ -207,18 +214,18 @@ def OPTIMIZE_MULTI_DRONE_ROUTES(FILE_NAME, MAX_ITERATIONS=100, NUM_RESTARTS=10):
     for K in range(1, 5):
         SOLUTION = SOLUTIONS[K]
         CLUSTER_IDS = SOLUTION['clusters']
-        LANDING_PAD = SOLUTION['landing_pad']
+        LANDING_PADS = SOLUTION['landing_pad']
         DISTANCES = SOLUTION['distances']
         MAX_DISTANCE = max(DISTANCES)
         
-        print(f"{K}) If you use {K} drone(s), the total route will be {MAX_DISTANCE:.1f} meters")
+        print(f"\n{K}) If you use {K} drone(s), the total route will be {MAX_DISTANCE:.1f} meters")
         
         for DRONE_ID in range(K):
-            LANDING_PAD = LANDING_PAD[DRONE_ID]
+            CURRENT_LANDING_PAD = LANDING_PADS[DRONE_ID]
             DISTANCE = DISTANCES[DRONE_ID]
             NUM_LOCATIONS_IN_CLUSTER = sum(1 for cid in CLUSTER_IDS if cid == DRONE_ID)
-            LANDING_PAD_X = int(round(LANDING_PAD[0]))
-            LANDING_PAD_Y = int(round(LANDING_PAD[1]))
+            LANDING_PAD_X = int(round(CURRENT_LANDING_PAD[0]))
+            LANDING_PAD_Y = int(round(CURRENT_LANDING_PAD[1]))
             
             print(f"   {'i' * (DRONE_ID + 1)}. Landing Pad {DRONE_ID + 1} should be at [{LANDING_PAD_X},{LANDING_PAD_Y}], serving {NUM_LOCATIONS_IN_CLUSTER} locations, route is {DISTANCE:.1f} meters")
     
@@ -229,11 +236,12 @@ def OPTIMIZE_MULTI_DRONE_ROUTES(FILE_NAME, MAX_ITERATIONS=100, NUM_RESTARTS=10):
     SELECTED_SOLUTION = SOLUTIONS[SELECTED_K]
     
     WRITE_ROUTE_FILES(SELECTED_SOLUTION, BASE_FILENAME, SELECTED_K)
+
+    GENERATE_SOLUTION_TRACE(FILE_NAME, SELECTED_SOLUTION)
     
     return SOLUTIONS
 
-
-
+# 
 def WRITE_ROUTE_FILES(SOLUTION, BASE_FILENAME, K):
     CLUSTER_IDS = SOLUTION['clusters']
     NUM_OF_LOCATIONS = len(CLUSTER_IDS)
@@ -248,8 +256,9 @@ def WRITE_ROUTE_FILES(SOLUTION, BASE_FILENAME, K):
                 CLUSTER_LOCATION_INDICES.append(LOCATION_INDEX + 1)
 
         ACTUAL_ROUTE = []
+        
         for NODE in ROUTE[1:-1]:
-            if NODE > 0:
+            if NODE > 0 and NODE <= len(CLUSTER_LOCATION_INDICES):
                 ACTUAL_LOCATION = CLUSTER_LOCATION_INDICES[NODE - 1]
                 ACTUAL_ROUTE.append(ACTUAL_LOCATION)
         
@@ -259,3 +268,31 @@ def WRITE_ROUTE_FILES(SOLUTION, BASE_FILENAME, K):
     
     FILE_LIST = [f"{BASE_FILENAME}_{i+1}_SOLUTION_{int(SOLUTION['distances'][i])}.txt" for i in range(K)]
     print(f"Writing {', '.join(FILE_LIST)} to disk")
+
+if __name__ == "__main__":
+    print("=" * 60)
+    print("MULTI-DRONE DELIVERY ROUTE OPTIMIZER")
+    print("=" * 60)
+    print()
+    
+    FILE_NAME = input("Enter the name of the file: ").strip()
+    
+    try:
+        SOLUTIONS = OPTIMIZE_MULTI_DRONE_ROUTES(FILE_NAME, MAX_ITERATIONS=100, NUM_RESTARTS=10)
+        
+        print("\n" + "=" * 60)
+        print("OPTIMIZATION COMPLETE")
+        print("=" * 60)
+        
+    except FileNotFoundError as e:
+        print(f"\n{e}")
+        print("Incorrect File Name or Type. Program aborted.")
+        sys.exit(1)
+    except ValueError as e:
+        print(f"\n{e}")
+        print("Program aborted.")
+        sys.exit(1)
+    except Exception as e:
+        print(f"\nUnexpected error: {e}")
+        print("Program aborted.")
+        sys.exit(1)
