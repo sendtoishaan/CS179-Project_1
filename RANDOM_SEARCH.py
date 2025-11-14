@@ -19,7 +19,7 @@ def GET_STATION_LOCATIONS(FILE_NAME):
         raise ValueError(f"Error: File must have exactly 2 columns (x, y coordinates).")
     
     LOCATIONS = len(DRONE_STATION_LOCATIONS)
-    if LOCATIONS > 256:
+    if LOCATIONS > 4096:
         raise ValueError(f"Error: Number of locations ({LOCATIONS}) exceeds the maximum limit of 256.")
     
     if LOCATIONS < 2:

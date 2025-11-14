@@ -1,12 +1,14 @@
 import sys
 import numpy
 import threading
+
 from RANDOM_SEARCH import (
     GET_STATION_LOCATIONS,
     CREATE_DISTANCE_MATRIX,
     CREATE_RANDOM_PATH,
     CALCULATE_PATH_DISTANCE,
 )
+
 from NEAREST_NEIGHBOR_SEARCH import(
     NEAREST_NEIGHBOR_SEARCH,
     TWO_OPT_SEARCH,
