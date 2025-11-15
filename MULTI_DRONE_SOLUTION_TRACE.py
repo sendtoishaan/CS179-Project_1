@@ -93,7 +93,8 @@ def SELECTED_SOLUTION_VISUAL_TRACE(SOLUTION, STATION_LOCATIONS, FILENAME):
     
     AX.legend(
         handles=LEGEND_ELEMENTS,
-        loc='upper right',
+        loc='center left',
+        bbox_to_anchor=(1, 0.5),
         fontsize=11,
         framealpha=0.95
     )
