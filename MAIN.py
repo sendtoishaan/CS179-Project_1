@@ -1,86 +1,84 @@
 import sys
-import numpy
-import threading
-
-from RANDOM_SEARCH import (
-    GET_STATION_LOCATIONS,
-    CREATE_DISTANCE_MATRIX,
-    CREATE_RANDOM_PATH,
-    CALCULATE_PATH_DISTANCE,
-)
-
-from NEAREST_NEIGHBOR_SEARCH import(
-    NEAREST_NEIGHBOR_SEARCH,
-    TWO_OPT_SEARCH,
-    COMPUTE_BSF_SOLUTION,
+from RANDOM_SEARCH import GET_STATION_LOCATIONS
+from MULTI_DRONE_SOLUTION_TRACE import GENERATE_SOLUTION_TRACE
+from datetime import datetime, timedelta
+from MULTI_DRONE_SOLUTION import (
+    KMEANS_SINGLE_RUN,
+    KMEANS_CLUSTERING,
+    CLUSTER_TSP_SOLVER,
+    SOLVE_MULTI_DRONE_PROBLEM,
+    WRITE_ROUTE_FILES,
 )
 
 
-# Global flag to signal when user hits ENTER
-STOP_FLAG = False
-
-# Waits for User to press ENTER
-def wait_for_enter():
-    global STOP_FLAG
-    input()
-    STOP_FLAG = True
-
-# Main function
 def main():
-    global STOP_FLAG
-    
-    print("=" * 60)
-    print("DRONE DELIVERY ROUTE OPTIMIZER")
-    print("=" * 60)
-    print()
-    
-    FILE_NAME = input("Enter the name of the file: ").strip()
+    print("ComputePossibleSolutions")
+    FILE_NAME = input("Enter the name of file: ").strip()
     
     try:
-        GET_LOCATIONS = GET_STATION_LOCATIONS(FILE_NAME)
-        NUMBER_OF_LOCATIONS = len(GET_LOCATIONS)
-        
-        if NUMBER_OF_LOCATIONS < 0 or NUMBER_OF_LOCATIONS > 256:
-            print("Number of stations is out of range(0 - 256).")
-            sys.exit(1)
-        
-        print(f"\nThere are {NUMBER_OF_LOCATIONS} nodes, computing route...")
-        
-        DISTANCE_MATRIX = CREATE_DISTANCE_MATRIX(GET_LOCATIONS)
-        
-        INITIAL_PATH = NEAREST_NEIGHBOR_SEARCH(DISTANCE_MATRIX)
-        INITIAL_DISTANCE = CALCULATE_PATH_DISTANCE(INITIAL_PATH, DISTANCE_MATRIX)
+        STATION_LOCATIONS = GET_STATION_LOCATIONS(FILE_NAME)
+        NUM_LOCATIONS = len(STATION_LOCATIONS)
 
-        BSF_PATH = INITIAL_PATH
-        BSF_DISTANCE = INITIAL_DISTANCE
+        START_TIME = datetime.now()
+        COMPLETION_TIME = START_TIME + timedelta(minutes=5)
+        
+        try:
+            COMPLETION_TIME_STRING = COMPLETION_TIME.strftime("%-I:%M%p").lower()
+        except:
+            COMPLETION_TIME_STRING = COMPLETION_TIME.strftime("%#I:%M%p").lower()
+        
+        print(f"There are {NUM_LOCATIONS} nodes: Solutions will be available by {COMPLETION_TIME_STRING}")
+        
 
-        print("\nShortest Route Discovered So Far(PRESS ENTER TO STOP):")
+        MAX_ITERATIONS = 200
+        NUM_RESTARTS = 10
+        KMEANS_RESULTS = KMEANS_CLUSTERING(STATION_LOCATIONS, NUM_RESTARTS, MAX_ITERATIONS)
         
-        STOP_FLAG = False
-        USER_ENTER = threading.Thread(target=wait_for_enter, daemon=True)
-        USER_ENTER.start()
+        SOLUTIONS = {}
+        for K in range(1, 5):
+            SOLUTION = SOLVE_MULTI_DRONE_PROBLEM(STATION_LOCATIONS, K, MAX_ITERATIONS, KMEANS_RESULTS)
+            SOLUTIONS[K] = SOLUTION
         
-        while not STOP_FLAG:
-            NEW_PATH, NEW_DISTANCE, IMPROVED = COMPUTE_BSF_SOLUTION(DISTANCE_MATRIX, BSF_PATH, BSF_DISTANCE)
+        ROMAN_NUMERALS = ['i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix', 'x']
+        
+        for K in range(1, 5):
+            SOLUTION = SOLUTIONS[K]
+            CLUSTER_IDS = SOLUTION['clusters']
+            LANDING_PAD = SOLUTION['landing_pad']
+            DISTANCES = SOLUTION['distances']
+            MAX_DISTANCE = max(DISTANCES)
             
-            if IMPROVED:
-                BSF_PATH = NEW_PATH
-                BSF_DISTANCE = NEW_DISTANCE
-                print(f"      {BSF_DISTANCE:.1f}")
+            print(f"{K}) If you use {K} drone(s), the total route will be {MAX_DISTANCE:.1f} meters")
+            
+            for DRONE_ID in range(K):
+                CURRENT_LANDING_PAD = LANDING_PAD[DRONE_ID]
+                DISTANCE = DISTANCES[DRONE_ID]
+                
+                NUM_LOCATIONS_IN_CLUSTER = sum(1 for cid in CLUSTER_IDS if cid == DRONE_ID)
+                
+                LANDING_PAD_X = int(round(CURRENT_LANDING_PAD[0]))
+                LANDING_PAD_Y = int(round(CURRENT_LANDING_PAD[1]))
+                
+                print(f"   {ROMAN_NUMERALS[DRONE_ID]}. Landing Pad {DRONE_ID + 1} should be at [{LANDING_PAD_X},{LANDING_PAD_Y}], serving {NUM_LOCATIONS_IN_CLUSTER} locations, route is {DISTANCE:.1f} meters")
         
-        if BSF_DISTANCE > 6000:
-            print(f"\nWARNING: Solution is {BSF_DISTANCE:.1f} meters, greater than the 6000-meter constraint.\n")
-
-        OUTPUT_FILENAME = FILE_NAME.rsplit('.', 1)[0] + "_solution_" + str(int(BSF_DISTANCE)) + ".txt"
+        while True:
+            try:
+                SELECTED_K = int(input("\nPlease select your choice 1 to 4: "))
+                if 1 <= SELECTED_K <= 4:
+                    break
+                print("Please enter a number between 1 and 4.")
+            except ValueError:
+                print("Please enter a valid number.")
         
-        with open(OUTPUT_FILENAME, 'w') as FHANDLE:
-            FHANDLE.write(' '.join(map(str, BSF_PATH)))
+        BASE_FILENAME = FILE_NAME.rsplit('.', 1)[0]
+        SELECTED_SOLUTION = SOLUTIONS[SELECTED_K]
         
-        print(f"Route written to disk as {OUTPUT_FILENAME}")
+        WRITE_ROUTE_FILES(SELECTED_SOLUTION, BASE_FILENAME, SELECTED_K)
+        GENERATE_SOLUTION_TRACE(FILE_NAME, SELECTED_SOLUTION)
         
     except FileNotFoundError as e:
         print(f"\n{e}")
-        print("Incorrect File Name or Type. Program aborted.")
+        print("Program aborted.")
         sys.exit(1)
     except ValueError as e:
         print(f"\n{e}")
@@ -90,7 +88,6 @@ def main():
         print(f"\nUnexpected error: {e}")
         print("Program aborted.")
         sys.exit(1)
-
 
 
 if __name__ == "__main__":

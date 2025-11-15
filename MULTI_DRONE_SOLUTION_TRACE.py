@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
-from matplotlib.patches import FancyArrowPatch
 from RANDOM_SEARCH import GET_STATION_LOCATIONS
 
 
@@ -32,33 +31,33 @@ def SELECTED_SOLUTION_VISUAL_TRACE(SOLUTION, STATION_LOCATIONS, FILENAME):
         for LOCATION_INDEX in range(NUM_OF_LOCATIONS):
             if CLUSTERS[LOCATION_INDEX] == DRONE:
                 CLUSTER_INDICES.append(LOCATION_INDEX)
-        
+
         ROUTE_COORDINATES = []
         LANDING_PAD = LANDING_PADS[DRONE]
         
         for NODE in ROUTE:
-            if NODE == 0:
+            if NODE == 1:
                 ROUTE_COORDINATES.append(LANDING_PAD)
             else:
-                if NODE - 1 < len(CLUSTER_INDICES):
-                    ACTUAL_INDEX = CLUSTER_INDICES[NODE - 1]
+                CLUSTER_INDEX = NODE - 2
+                if CLUSTER_INDEX < len(CLUSTER_INDICES):
+                    ACTUAL_INDEX = CLUSTER_INDICES[CLUSTER_INDEX]
                     ROUTE_COORDINATES.append(STATION_LOCATIONS[ACTUAL_INDEX])
+                else:
+                    print(f"ERROR: NODE {NODE} -> CLUSTER_INDEX {CLUSTER_INDEX}, but cluster only has {len(CLUSTER_INDICES)} stations")
         
         for i in range(len(ROUTE_COORDINATES) - 1):
             X_START, Y_START = ROUTE_COORDINATES[i]
             X_END, Y_END = ROUTE_COORDINATES[i + 1]
             
-            ARROW = FancyArrowPatch(
-                (X_START, Y_START),
-                (X_END, Y_END),
-                arrowstyle='->',
-                mutation_scale=20,
-                linewidth=1.5,
+            AX.plot(
+                [X_START, X_END],
+                [Y_START, Y_END],
                 color=DRONE_COLOR,
+                linewidth=2,
                 alpha=0.7,
                 zorder=2
             )
-            AX.add_patch(ARROW)
     
     for LOCATION_INDEX in range(NUM_OF_LOCATIONS):
         X, Y = STATION_LOCATIONS[LOCATION_INDEX]

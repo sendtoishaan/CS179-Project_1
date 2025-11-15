@@ -12,20 +12,18 @@ from NEAREST_NEIGHBOR_SEARCH import (
    NEAREST_NEIGHBOR_SEARCH,
    TWO_OPT_SEARCH,
 )
-
 from MULTI_DRONE_SOLUTION_TRACE import GENERATE_SOLUTION_TRACE
 
-# 
+# Performs a single k-means clustering iteration to group stations and find the optimal landing pad
 def KMEANS_SINGLE_RUN(STATION_LOCATIONS, NUM_OF_CLUSTERS, MAX_ITERATIONS):
-   NUM_LOCATIONS = len(STATION_LOCATIONS)
-   RANDOM_INDEX_LIST = random.sample(range(NUM_LOCATIONS), NUM_OF_CLUSTERS)
-   CLUSTER_LANDING_PAD = []
+    NUM_LOCATIONS = len(STATION_LOCATIONS)
+    RANDOM_INDEX_LIST = random.sample(range(NUM_LOCATIONS), NUM_OF_CLUSTERS)
+    CLUSTER_LANDING_PAD = []
 
-
-   for i in RANDOM_INDEX_LIST:
+    for i in RANDOM_INDEX_LIST:
        CLUSTER_LANDING_PAD.append([STATION_LOCATIONS[i][0], STATION_LOCATIONS[i][1]])
   
-   for i in range(MAX_ITERATIONS):
+    for i in range(MAX_ITERATIONS):
        DISTANCES = [[0.0] * NUM_OF_CLUSTERS for _ in range(NUM_LOCATIONS)]
   
        for LOCATION_INDEX in range(NUM_LOCATIONS):
@@ -34,7 +32,6 @@ def KMEANS_SINGLE_RUN(STATION_LOCATIONS, NUM_OF_CLUSTERS, MAX_ITERATIONS):
                Y = STATION_LOCATIONS[LOCATION_INDEX][1] - CLUSTER_LANDING_PAD[CLUSTER_INDEX][1]
                DISTANCE = (X * X) + (Y * Y)
                DISTANCES[LOCATION_INDEX][CLUSTER_INDEX] = DISTANCE
-
 
        CLUSTER_IDS = []
        
@@ -80,49 +77,16 @@ def KMEANS_SINGLE_RUN(STATION_LOCATIONS, NUM_OF_CLUSTERS, MAX_ITERATIONS):
   
        CLUSTER_LANDING_PAD = NEW_CLUSTER_LANDING_PAD
   
-   SUM_OF_DISTANCE = 0.0
-   
-   for LOCATION_INDEX in range(NUM_OF_CLUSTERS):
-       CLUSTER_INDEX = CLUSTER_IDS[LOCATION_INDEX]
-       NEW_CLUSTER_LANDING_PAD[CLUSTER_INDEX][0] += STATION_LOCATIONS[LOCATION_INDEX][0]
-       NEW_CLUSTER_LANDING_PAD[CLUSTER_INDEX][1] += STATION_LOCATIONS[LOCATION_INDEX][1]
-       CLUSTER_COUNT[CLUSTER_INDEX] += 1
-
-
-   for CLUSTER_INDEX in range(NUM_OF_CLUSTERS):
-       if CLUSTER_COUNT[CLUSTER_INDEX] == 0:
-           RANDOM_INDEX = random.randint(0, NUM_LOCATIONS - 1)
-           NEW_CLUSTER_LANDING_PAD[CLUSTER_INDEX] = [STATION_LOCATIONS[RANDOM_INDEX][0], STATION_LOCATIONS[RANDOM_INDEX][1]]
-       else:
-           NEW_CLUSTER_LANDING_PAD[CLUSTER_INDEX][0] /= CLUSTER_COUNT[CLUSTER_INDEX]
-           NEW_CLUSTER_LANDING_PAD[CLUSTER_INDEX][1] /= CLUSTER_COUNT[CLUSTER_INDEX]
-      
-       CONVERGED = True
-       
-       for CLUSTER_INDEX in range(NUM_OF_CLUSTERS):
-           X = abs(CLUSTER_LANDING_PAD[CLUSTER_INDEX][0] - NEW_CLUSTER_LANDING_PAD[CLUSTER_INDEX][0])
-           Y = abs(CLUSTER_LANDING_PAD[CLUSTER_INDEX][1] - NEW_CLUSTER_LANDING_PAD[CLUSTER_INDEX][1])
-           if X > 1e-6 or Y > 1e-6:
-               CONVERGED = False
-               break
-      
-       if CONVERGED:
-           CLUSTER_LANDING_PAD = NEW_CLUSTER_LANDING_PAD
-           break
-  
-       CLUSTER_LANDING_PAD = NEW_CLUSTER_LANDING_PAD
-  
-   SUM_OF_DISTANCE = 0.0
-   
-   for LOCATION_INDEX in range(NUM_LOCATIONS):
+    SUM_OF_DISTANCE = 0.0
+    for LOCATION_INDEX in range(NUM_LOCATIONS):
        CLUSTER_INDEX = CLUSTER_IDS[LOCATION_INDEX]
        X = STATION_LOCATIONS[LOCATION_INDEX][0] - CLUSTER_LANDING_PAD[CLUSTER_INDEX][0]
        Y = STATION_LOCATIONS[LOCATION_INDEX][1] - CLUSTER_LANDING_PAD[CLUSTER_INDEX][1]
        SUM_OF_DISTANCE += (X * X) + (Y * Y)
   
-   return CLUSTER_IDS, CLUSTER_LANDING_PAD, SUM_OF_DISTANCE
+    return CLUSTER_IDS, CLUSTER_LANDING_PAD, SUM_OF_DISTANCE
 
-# 
+# Runs k-means clustering multiple times for K=1 to 4 and returns the best clustering results for each K
 def KMEANS_CLUSTERING(STATION_LOCATIONS, NUM_OF_CLUSTERS, MAX_ITERATIONS):
    RESULTS = {}
 
@@ -145,7 +109,7 @@ def KMEANS_CLUSTERING(STATION_LOCATIONS, NUM_OF_CLUSTERS, MAX_ITERATIONS):
    return RESULTS
 
 
-# 
+# Solves the TSP for a single cluster using nearest neighbor and 2-opt optimization
 def CLUSTER_TSP_SOLVER(CLUSTER_LOCATIONS, LANDING_PAD, MAX_ITERATIONS):
     NUM_OF_LOCATIONS = [LANDING_PAD] + CLUSTER_LOCATIONS
     DISTANCE_MATRIX = CREATE_DISTANCE_MATRIX(NUM_OF_LOCATIONS)
@@ -157,7 +121,7 @@ def CLUSTER_TSP_SOLVER(CLUSTER_LOCATIONS, LANDING_PAD, MAX_ITERATIONS):
     
     return OPTIMIZED_PATH, ROUTE_DISTANCE
 
-# 
+# Generates complete multi-drone solution with routes, distances, and flight times for a given K value
 def SOLVE_MULTI_DRONE_PROBLEM(STATION_LOCATIONS, K, MAX_ITERATIONS, RESULTS):
     NUM_OF_LOCATIONS = len(STATION_LOCATIONS)
     ROUTES = []
@@ -194,7 +158,7 @@ def SOLVE_MULTI_DRONE_PROBLEM(STATION_LOCATIONS, K, MAX_ITERATIONS, RESULTS):
     
     return SOLUTION
 
-# 
+# Runs k-means clustering and TSP optimization for all K values.
 def OPTIMIZE_MULTI_DRONE_ROUTES(FILE_NAME, MAX_ITERATIONS=100, NUM_RESTARTS=10):
     from RANDOM_SEARCH import GET_STATION_LOCATIONS
     print("ComputePossibleSolutions")
@@ -241,7 +205,7 @@ def OPTIMIZE_MULTI_DRONE_ROUTES(FILE_NAME, MAX_ITERATIONS=100, NUM_RESTARTS=10):
     
     return SOLUTIONS
 
-# 
+# Writes the optimized routes to text files, converting cluster-relative indices back to original station numbers
 def WRITE_ROUTE_FILES(SOLUTION, BASE_FILENAME, K):
     CLUSTER_IDS = SOLUTION['clusters']
     NUM_OF_LOCATIONS = len(CLUSTER_IDS)
@@ -270,20 +234,11 @@ def WRITE_ROUTE_FILES(SOLUTION, BASE_FILENAME, K):
     print(f"Writing {', '.join(FILE_LIST)} to disk")
 
 if __name__ == "__main__":
-    print("=" * 60)
-    print("MULTI-DRONE DELIVERY ROUTE OPTIMIZER")
-    print("=" * 60)
-    print()
     
     FILE_NAME = input("Enter the name of the file: ").strip()
     
     try:
-        SOLUTIONS = OPTIMIZE_MULTI_DRONE_ROUTES(FILE_NAME, MAX_ITERATIONS=100, NUM_RESTARTS=10)
-        
-        print("\n" + "=" * 60)
-        print("OPTIMIZATION COMPLETE")
-        print("=" * 60)
-        
+        SOLUTIONS = OPTIMIZE_MULTI_DRONE_ROUTES(FILE_NAME, MAX_ITERATIONS=10000, NUM_RESTARTS=10)
     except FileNotFoundError as e:
         print(f"\n{e}")
         print("Incorrect File Name or Type. Program aborted.")
