@@ -163,10 +163,8 @@ def OPTIMIZE_MULTI_DRONE_ROUTES(FILE_NAME, MAX_ITERATIONS=100, NUM_RESTARTS=10):
     from RANDOM_SEARCH import GET_STATION_LOCATIONS
     print("ComputePossibleSolutions")
     STATION_LOCATIONS = GET_STATION_LOCATIONS(FILE_NAME)
-    NUM_OF_LOCATIONS = len(STATION_LOCATIONS)
     
     print(f"File: {FILE_NAME}")
-    print(f"There are {NUM_OF_LOCATIONS} nodes: Solutions will be available by 7:04am") # time change
     
     KMEANS_RESULTS = KMEANS_CLUSTERING(STATION_LOCATIONS, NUM_RESTARTS, MAX_ITERATIONS)
     SOLUTIONS = {}
@@ -238,7 +236,7 @@ if __name__ == "__main__":
     FILE_NAME = input("Enter the name of the file: ").strip()
     
     try:
-        SOLUTIONS = OPTIMIZE_MULTI_DRONE_ROUTES(FILE_NAME, MAX_ITERATIONS=10000, NUM_RESTARTS=10)
+        SOLUTIONS = OPTIMIZE_MULTI_DRONE_ROUTES(FILE_NAME, MAX_ITERATIONS=100, NUM_RESTARTS=10)
     except FileNotFoundError as e:
         print(f"\n{e}")
         print("Incorrect File Name or Type. Program aborted.")
